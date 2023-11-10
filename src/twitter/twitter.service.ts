@@ -1,26 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
-import { UpdateTwitterDto } from './dto/update-twitter.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { OpenAIProvider } from 'src/openai/summary.provider';
 
 @Injectable()
 export class TwitterService {
-  create(createTwitterDto: CreateTwitterDto) {
-    return 'This action adds a new twitter';
-  }
+  constructor(
+    @InjectModel('Twitter') private readonly twitterModel,
+    private readonly openaiService: OpenAIProvider
+  ) { }
 
-  findAll() {
-    return `This action returns all twitter`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} twitter`;
-  }
-
-  update(id: number, updateTwitterDto: UpdateTwitterDto) {
-    return `This action updates a #${id} twitter`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} twitter`;
+  async create(createTwitterDto: CreateTwitterDto) {
+    const model = new this.twitterModel(createTwitterDto);
+    return await model.save();
   }
 }
