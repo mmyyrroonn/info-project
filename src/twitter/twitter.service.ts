@@ -11,6 +11,7 @@ export class TwitterService {
   ) { }
 
   async create(createTwitterDto: CreateTwitterDto) {
+    this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
     const model = new this.twitterModel(createTwitterDto);
     return await model.save();
   }

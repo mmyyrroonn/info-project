@@ -30,30 +30,35 @@ export class OpenAIProvider {
 
   }
 
-  getOpenAI() {
+  public getOpenAI() {
     return this.openai;
   }
 
-  async summry(linkToTweet: string, content: string) {
+  public async summry(linkToTweet: string, content: string) {
     console.log("Try to summary twitter content: ", content);
     const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
         messages: [this.summarySystemPrompt, { role: 'user', content: content }],
         model: 'gpt-3.5-turbo',
     });
-    const summary = chatCompletion["choices"][0]["message"]["content"];
-    await this.saveToDatabase(linkToTweet, summary);
+    const res = JSON.parse(chatCompletion["choices"][0]["message"]["content"]);
+    await this.saveToDatabase(linkToTweet, res);
   }
 
-  async saveToDatabase(linkToTweet: string, summary: string) {
+  private async saveToDatabase(linkToTweet: string, res: any) {
+    if (!res || !res.keywords || !res.score){
+        console.log('Invalid response object:', res);
+        return; // 停止执行方法
+    }
     const existingSummary = await this.twitterSummaryModel.findOne({ linkToTweet }).exec();
 
     if (existingSummary) {
       // 如果数据库中已经存在与linkToTweet相匹配的记录，则进行更新
-      existingSummary.summary = summary;
+      existingSummary.keyWords = res.keywords;
+      existingSummary.score = res.score;
       await existingSummary.save();
     } else {
       // 否则进行创建新的记录
-      const newSummary = new this.twitterSummaryModel({ linkToTweet, summary });
+      const newSummary = new this.twitterSummaryModel({ linkToTweet, keyWords: res.keywords, score: res.score});
       await newSummary.save();
     }
   }
