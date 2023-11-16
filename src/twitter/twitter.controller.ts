@@ -7,9 +7,14 @@ import { UpdateTwitterDto } from './dto/update-twitter.dto';
 export class TwitterController {
   constructor(private readonly twitterService: TwitterService) {}
 
-  @Post()
-  create(@Body() createTwitterDto: CreateTwitterDto) {
-    return this.twitterService.create(createTwitterDto);
+  @Post("/like")
+  storeLike(@Body() createTwitterDto: CreateTwitterDto) {
+    return this.twitterService.create(createTwitterDto, "like");
+  }
+
+  @Post("/new")
+  storeNew(@Body() createTwitterDto: CreateTwitterDto) {
+    return this.twitterService.create(createTwitterDto, "new");
   }
 
   // @Get()

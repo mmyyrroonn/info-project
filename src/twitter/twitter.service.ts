@@ -10,9 +10,9 @@ export class TwitterService {
     private readonly openaiService: OpenAIProvider
   ) { }
 
-  async create(createTwitterDto: CreateTwitterDto) {
+  async create(createTwitterDto: CreateTwitterDto, type: String) {
     this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
-    const model = new this.twitterModel(createTwitterDto);
+    const model = new this.twitterModel({...createTwitterDto, type});
     return await model.save();
   }
 }

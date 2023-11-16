@@ -3,6 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { InjectModel } from '@nestjs/mongoose';
 
+type SUMMARY = {
+  keywords: [string]
+  score: number
+}
+
 @Injectable()
 export class OpenAIProvider {
   private readonly openai;
@@ -12,18 +17,36 @@ export class OpenAIProvider {
     你是一位精通推特关键词提取，信息分配的大师。同时你热爱加密货币领域，愿意发掘新的机会进行参与。我希望你总结推特信息，提取关键词，并且对此推特内容进行一个重要性评分。
     
     规则:
-    - 每次提取出5个关键词.
+    - 每次最多提取出5个关键词.
     - 重要性评分为0到10分,最重要为10分,不重要为0分,保留小数点1位.
+    - 重要性是基于发掘加密货币领域的消息来说决定.
+    - 当发生意外的时候，一定要按照标准格式返回，keywords可以用占位符，重要性评分为0.
 
-    返回格式如下, 需要是如下的JSON格式, xxx表示占位符:
-    {keywords: [xxx,xxx,xxx,xxx,xxx], score: 7.9}
+    策略:
+    - 首先对内容进行大致分类，以此作为重要性评分的一个标准
+
+    返回格式如下, 需要是如下可以被解析的JSON格式, xxx表示占位符:
+    {"keywords": ["xxx","xxx","xxx","xxx","xxx"],"score": 7.9}
     `
-}
+  }
+  private readonly outputSchema = {
+    "type": "object",
+    "properties": {
+      "keywords": {
+        "type": "array",
+        "items": {"type": "string"}
+      },
+      "score": {
+        "type": "number"
+      }
+    },
+    "required": ["keywords", "score"]
+  }
 
   constructor(
     @InjectModel('Summary') private readonly twitterSummaryModel,
     private readonly configService: ConfigService
-) {
+  ) {
     this.openai = new OpenAI({
         apiKey: this.configService.get('openaiKey'),
     });
@@ -39,13 +62,26 @@ export class OpenAIProvider {
     const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
         messages: [this.summarySystemPrompt, { role: 'user', content: content }],
         model: 'gpt-3.5-turbo',
+        functions: [
+          {
+              name: "createSummaryObject",
+              parameters: this.outputSchema
+          }
+        ],
+        function_call: { name: "createSummaryObject" }
     });
-    const res = JSON.parse(chatCompletion["choices"][0]["message"]["content"]);
+    let res;
+    try {
+        res = <SUMMARY>JSON.parse(chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
+    } catch (error) {
+        console.error('Invalid json format:', chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
+        return; // 停止执行方法
+    }
     await this.saveToDatabase(linkToTweet, res);
   }
 
   private async saveToDatabase(linkToTweet: string, res: any) {
-    if (!res || !res.keywords || !res.score){
+    if (res === null || res.keywords === null || res.score === null){
         console.log('Invalid response object:', res);
         return; // 停止执行方法
     }

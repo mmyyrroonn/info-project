@@ -5,5 +5,6 @@ export const TwitterSchema = new mongoose.Schema({
   userName: String,
   linkToTweet: String,
   tweetEmbedCode: String,
-  createAt: String
+  createAt: String,
+  type: String
 });

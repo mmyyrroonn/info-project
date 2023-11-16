@@ -7,6 +7,7 @@ import { TwitterSummarySchema } from './schema/summary.schema';
   imports: [
     MongooseModule.forFeature([{ name: 'Summary', schema: TwitterSummarySchema }]),
   ],
+  providers: [OpenAIProvider],
   exports: [OpenAIProvider],
 })
 export class OpenaiModule {}
