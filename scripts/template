@@ -1,0 +1,9 @@
+http://52.156.40.155:3001/twitter/new
+
+{
+  "text": " <<<{{Text}}>>>",
+  "userName": " <<<{{UserName}}>>>",
+  "linkToTweet": " <<<{{LinkToTweet}}>>>",
+  "tweetEmbedCode": " <<<{{TweetEmbedCode}}>>>",
+  "createAt": " <<<{{CreatedAt}}>>>"
+} 
