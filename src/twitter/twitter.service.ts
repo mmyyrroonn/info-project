@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { OpenAIProvider } from 'src/openai/summary.provider';
+import { OpenAISummaryProvider } from 'src/openai/summary.provider';
 
 @Injectable()
 export class TwitterService {
   constructor(
     @InjectModel('Twitter') private readonly twitterModel,
-    private readonly openaiService: OpenAIProvider
+    private readonly openaiService: OpenAISummaryProvider
   ) { }
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {

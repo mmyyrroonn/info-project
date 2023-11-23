@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
-import { OpenAIProvider } from './summary.provider';
+import { OpenAISummaryProvider } from './summary.provider';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TwitterSummarySchema } from './schema/summary.schema';
+import { OpenAIUserFilterProvider } from './koljudgement.provider';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Summary', schema: TwitterSummarySchema }]),
   ],
-  providers: [OpenAIProvider],
-  exports: [OpenAIProvider],
+  providers: [OpenAISummaryProvider, OpenAIUserFilterProvider],
+  exports: [OpenAISummaryProvider, OpenAIUserFilterProvider],
 })
 export class OpenaiModule {}

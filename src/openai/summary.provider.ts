@@ -9,12 +9,12 @@ type SUMMARY = {
 }
 
 @Injectable()
-export class OpenAIProvider {
+export class OpenAISummaryProvider {
   private readonly openai;
   private readonly summarySystemPrompt = {
     "role": "system",
     "content": `
-    你是一位精通推特关键词提取，信息分配的大师。同时你热爱加密货币领域，愿意发掘新的机会进行参与。我希望你总结推特信息，提取关键词，并且对此推特内容进行一个重要性评分。
+    你是一位精通推特关键词提取，信息分析的大师。同时你热爱加密货币领域，愿意发掘新的机会进行参与。我希望你总结推特信息，提取关键词，并且对此推特内容进行一个重要性评分。
     
     规则:
     - 每次最多提取出5个关键词.
