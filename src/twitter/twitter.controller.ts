@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UploadedFile, UseInterceptors, ParseFilePipeBuilder } from '@nestjs/common';
+import { Controller, Post, Body, Get, UploadedFile, UseInterceptors, ParseFilePipeBuilder } from '@nestjs/common';
 import { TwitterService } from './twitter.service';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
 import { UpdateTwitterDto } from './dto/update-twitter.dto';
@@ -39,6 +39,11 @@ export class TwitterController {
   @Post("/filterFollowings")
   filterFollowing() {
     return this.twitterService.filterFollowing(10);
+  }
+
+  @Get("/queryWorthUsers")
+  queryWorthUsers() {
+    return this.twitterService.queryWorthUsers();
   }
 
   // @Get()

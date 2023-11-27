@@ -54,8 +54,10 @@ export class TwitterService {
         console.error("something wrong, failed this time");
         return;
       }
-      for(let user of users) {
-        await this.twitterUserModel.updateOne({"_id": user._id}, {"isWorthAnalyze": true, "filtered": true, "lastFilterTime": new Date()}).exec();
+      for(let i = 0; i < users.length; i++) {
+        let user = users[i];
+        const isWorth = res[i];
+        await this.twitterUserModel.updateOne({"_id": user._id}, {"isWorthAnalyze": isWorth, "filtered": true, "lastFilterTime": new Date()}).exec();
       }
 
       console.log(`Updated ${users.length} users.`);
@@ -71,7 +73,7 @@ export class TwitterService {
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
       concatenatedString += '"';
-      concatenatedString += user.legacy.description;
+      concatenatedString += user.legacy.description?user.legacy.description:"null";
       concatenatedString += '"';
       concatenatedString += ',';
     }
@@ -82,5 +84,11 @@ export class TwitterService {
 
     console.log(results);
     return results;
+  }
+
+  async queryWorthUsers() {
+    const users = await this.twitterUserModel.find({ isWorthAnalyze: true }).exec();
+    const names = users.map(user => user.legacy.screen_name);
+    return names;
   }
 }
