@@ -8,8 +8,12 @@ type SUMMARY = {
   score: number
 }
 
+type FILTERRES = {
+  result: [boolean]
+}
+
 @Injectable()
-export class OpenAISummaryProvider {
+export class OpenAIProvider {
   private readonly openai;
   private readonly summarySystemPrompt = {
     "role": "system",
@@ -29,7 +33,7 @@ export class OpenAISummaryProvider {
     {"keywords": ["xxx","xxx","xxx","xxx","xxx"],"score": 7.9}
     `
   }
-  private readonly outputSchema = {
+  private readonly summaryOutputSchema = {
     "type": "object",
     "properties": {
       "keywords": {
@@ -41,6 +45,34 @@ export class OpenAISummaryProvider {
       }
     },
     "required": ["keywords", "score"]
+  }
+
+  private readonly filterSystemPrompt = {
+    "role": "system",
+    "content": `
+    你是一位精通推特关键词提取，信息分析的大师。同时你热爱加密货币领域，愿意发掘新的机会进行参与。
+    接下来我会给你若干描述语句，每一个描述语句都是一个推特用户的个人描述，帮我以此判断每一个推特用户是否是在加密货币领域，并且乐于分享研究成果。
+    
+    规则:
+    - 输入为一个列表，列表每一项都是一个用户的一段描述语句
+
+    策略:
+    - 对每一个描述语句都分别进行判断
+
+    返回格式如下, 需要是如下可以被解析的JSON格式:
+    [False, True, True]
+    `
+  }
+
+  private readonly filterOutputSchema = {
+    "type": "object",
+    "properties": {
+      "result": {
+        "type": "array",
+        "items": {"type": "boolean"}
+      }
+    },
+    "required": ["result"]
   }
 
   constructor(
@@ -65,7 +97,7 @@ export class OpenAISummaryProvider {
         functions: [
           {
               name: "createSummaryObject",
-              parameters: this.outputSchema
+              parameters: this.summaryOutputSchema
           }
         ],
         function_call: { name: "createSummaryObject" }
@@ -80,6 +112,29 @@ export class OpenAISummaryProvider {
     await this.saveToDatabase(linkToTweet, res);
   }
 
+  public async filter(content: string) {
+    console.log("Try to filter following users: ", content);
+    const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
+        messages: [this.filterSystemPrompt, { role: 'user', content: content }],
+        model: 'gpt-3.5-turbo',
+        functions: [
+          {
+              name: "createFilterObject",
+              parameters: this.filterOutputSchema
+          }
+        ],
+        function_call: { name: "createFilterObject" }
+    });
+    let res;
+    try {
+        res = <FILTERRES>JSON.parse(chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
+    } catch (error) {
+        console.error('Invalid json format:', chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
+        return []; // 停止执行方法
+    }
+    return res["result"];
+  }
+
   private async saveToDatabase(linkToTweet: string, res: any) {
     if (res === null || res.keywords === null || res.score === null){
         console.log('Invalid response object:', res);
@@ -89,9 +144,7 @@ export class OpenAISummaryProvider {
 
     if (existingSummary) {
       // 如果数据库中已经存在与linkToTweet相匹配的记录，则进行更新
-      existingSummary.keyWords = res.keywords;
-      existingSummary.score = res.score;
-      await existingSummary.save();
+      await this.twitterSummaryModel.updateOne({"_id": existingSummary._id},{"keyWords":res.keywords, "score":res.score }).exec();
     } else {
       // 否则进行创建新的记录
       const newSummary = new this.twitterSummaryModel({ linkToTweet, keyWords: res.keywords, score: res.score});

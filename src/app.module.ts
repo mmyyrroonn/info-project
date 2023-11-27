@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { TwitterModule } from './twitter/twitter.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigService, ConfigModule } from '@nestjs/config';
-import { TwitterSchema } from './twitter/schema/twitter.schema';
+import { TwitterSchema, TwitterUserSchema } from './twitter/schema/twitter.schema';
 import { LoggerMiddleware } from './common/logger.middleware';
 import { OpenaiModule } from './openai/openai.module';
 import { TwitterSummarySchema } from './openai/schema/summary.schema';
@@ -29,6 +29,7 @@ import { TwitterSummarySchema } from './openai/schema/summary.schema';
   }),
   MongooseModule.forFeature([
     { name: 'Twitter', schema: TwitterSchema },
+    { name: 'TwitterUser', schema: TwitterUserSchema },
     { name: 'Summary', schema: TwitterSummarySchema }
   ]),
   TwitterModule,

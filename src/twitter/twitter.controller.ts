@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UploadedFile, UseInterceptors, ParseFilePipeBuilder } from '@nestjs/common';
 import { TwitterService } from './twitter.service';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
 import { UpdateTwitterDto } from './dto/update-twitter.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
+import { memoryStorage } from 'multer';
 
 @Controller('twitter')
 export class TwitterController {
@@ -15,6 +18,27 @@ export class TwitterController {
   @Post("/new")
   storeNew(@Body() createTwitterDto: CreateTwitterDto) {
     return this.twitterService.create(createTwitterDto, "new");
+  }
+
+  @Post("/insertFollowings")
+  @UseInterceptors(FileInterceptor('followings', { storage: memoryStorage() }))
+  insertFollowings(@UploadedFile(new ParseFilePipeBuilder()
+  .addFileTypeValidator({
+    fileType: 'json',
+  })
+  .build(),) userList: Express.Multer.File) {
+
+    const usersData = JSON.parse(userList.buffer.toString());
+
+    // 插入数据库
+    this.twitterService.storeUsersAndFilter(usersData);
+
+    return "success";
+  }
+
+  @Post("/filterFollowings")
+  filterFollowing() {
+    return this.twitterService.filterFollowing(10);
   }
 
   // @Get()

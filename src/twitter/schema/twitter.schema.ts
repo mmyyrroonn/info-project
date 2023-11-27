@@ -8,3 +8,5 @@ export const TwitterSchema = new mongoose.Schema({
   createAt: String,
   type: String
 });
+
+export const TwitterUserSchema = new mongoose.Schema({}, { strict: false });
