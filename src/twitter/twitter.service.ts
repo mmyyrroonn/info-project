@@ -10,14 +10,15 @@ export class TwitterService {
   constructor(
     @InjectModel('Twitter') private readonly twitterModel,
     @InjectModel('TwitterUser') private readonly twitterUserModel,
+    @InjectModel('Summary') private readonly twitterSummaryModel,
     private readonly openaiService: OpenAIProvider
   ) {
 
   }
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {
-    this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
-    const model = new this.twitterModel({ ...createTwitterDto, type });
+    // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
+    const model = new this.twitterModel({ ...createTwitterDto, type, summarized: false });
     return await model.save();
   }
 
@@ -90,5 +91,16 @@ export class TwitterService {
     const users = await this.twitterUserModel.find({ isWorthAnalyze: true }).exec();
     const names = users.map(user => user.legacy.screen_name);
     return names;
+  }
+
+  async queryLastDaySummary()
+  {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const summarized = await this.twitterSummaryModel.find({ summarizedAt: { $gte: oneDayAgo} }).exec();
+    const withText = (await Promise.all( summarized.map(async obj => {
+      const text = (await this.twitterModel.findOne({ linkToTweet: obj.linkToTweet }).exec()).text;
+      return {...obj._doc, text};
+    }))).sort((a, b) => b.score - a.score);
+    return withText;
   }
 }

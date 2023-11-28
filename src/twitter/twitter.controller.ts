@@ -46,6 +46,11 @@ export class TwitterController {
     return this.twitterService.queryWorthUsers();
   }
 
+  @Get("/queryLastDaySummary")
+  queryLastDaySummary() {
+    return this.twitterService.queryLastDaySummary();
+  }
+
   // @Get()
   // findAll() {
   //   return this.twitterService.findAll();
