@@ -1,0 +1,142 @@
+{
+	"info": {
+		"_postman_id": "24c07a55-c463-49c4-ad5f-75b87dff80c2",
+		"name": "info",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "uploadusers",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "followings",
+							"type": "file",
+							"src": "/Users/qiufan/nosocial/info-project/scripts/twitter-blackmoshui-following-1700570778091.json"
+						}
+					],
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://info.myron-moshui.online/twitter/insertFollowings",
+					"protocol": "https",
+					"host": [
+						"info",
+						"myron-moshui",
+						"online"
+					],
+					"path": [
+						"twitter",
+						"insertFollowings"
+					]
+				},
+				"description": "insert new twitter"
+			},
+			"response": []
+		},
+		{
+			"name": "insert",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"text\": \"(1/3)推荐一个冷门项目，目前不到3000人参与，名牌空投代币！#Airdrop@Aethir_是一个专注云游戏构建、去中心化的实时渲染网络，一共获得了1000多万美元融资，估值为1.5亿美元，最近它还加入了NVIDIA启动计划！官网说24年初代币TGE，教程如下👇：\",\n  \"userName\": \"test\",\n  \"linkToTweet\": \"123\",\n  \"tweetEmbedCode\": \"test1\",\n  \"createAt\": \"test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://info.myron-moshui.online/twitter/new",
+					"protocol": "https",
+					"host": [
+						"info",
+						"myron-moshui",
+						"online"
+					],
+					"path": [
+						"twitter",
+						"new"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://info.myron-moshui.online/twitter/filterFollowings",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://info.myron-moshui.online/twitter/filterFollowings",
+					"protocol": "https",
+					"host": [
+						"info",
+						"myron-moshui",
+						"online"
+					],
+					"path": [
+						"twitter",
+						"filterFollowings"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://info.myron-moshui.online/twitter/queryWorthUsers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://info.myron-moshui.online/twitter/queryWorthUsers",
+					"protocol": "https",
+					"host": [
+						"info",
+						"myron-moshui",
+						"online"
+					],
+					"path": [
+						"twitter",
+						"queryWorthUsers"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://info.myron-moshui.online/twitter/queryLastDaySummary",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://info.myron-moshui.online/twitter/queryLastDaySummary",
+					"protocol": "https",
+					"host": [
+						"info",
+						"myron-moshui",
+						"online"
+					],
+					"path": [
+						"twitter",
+						"queryLastDaySummary"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
