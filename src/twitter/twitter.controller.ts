@@ -51,6 +51,11 @@ export class TwitterController {
     return this.twitterService.queryLastDaySummary();
   }
 
+  // @Post("/migration")
+  // testParse(@Body() createTwitterDto: CreateTwitterDto) {
+  //   return this.twitterService.migrationDB();
+  // }
+
   // @Get()
   // findAll() {
   //   return this.twitterService.findAll();

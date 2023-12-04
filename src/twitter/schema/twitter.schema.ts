@@ -5,7 +5,7 @@ export const TwitterSchema = new mongoose.Schema({
   userName: String,
   linkToTweet: String,
   tweetEmbedCode: String,
-  createAt: String,
+  createAt: Date,
   type: String, // Post, Like, Retweet, Reply
   summarized: Boolean,
   retryCount: Number

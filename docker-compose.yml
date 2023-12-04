@@ -11,5 +11,5 @@ services:
       - DB_USER=myron
       - DB_PASS=monitor
       - DB_NAME=info
-      - openaiKey=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
+      - openaiKey=${openaiKey}
       - openaiEnable=true

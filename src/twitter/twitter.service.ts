@@ -19,7 +19,7 @@ export class TwitterService {
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {
     // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
-    createTwitterDto.text = createTwitterDto.text.trim();
+    createTwitterDto.text = createTwitterDto.text?.trim();
     if(type == "New")
     {
       if(createTwitterDto.text.startsWith("@"))
@@ -32,7 +32,13 @@ export class TwitterService {
         type = "Post";
       }
     }
-    const model = new this.twitterModel({ ...createTwitterDto, type, summarized: false, retryCount: this.retryCount });
+    const model = new this.twitterModel({
+      ...createTwitterDto,
+      createAt: this.convertStringToDate(createTwitterDto.createAt),
+      type,
+      summarized: false,
+      retryCount: this.retryCount
+    });
     return await model.save();
   }
 
@@ -117,4 +123,47 @@ export class TwitterService {
     }))).sort((a, b) => b.score - a.score);
     return withText;
   }
+
+  convertStringToDate(dateString) {
+    try {
+      // 移除多余空格
+      dateString = dateString.trim();
+      // 将字符串按空格分割为日期和时间部分
+      const [datePart, timePart] = dateString.split(' at ');
+
+      // 解析时间部分并获取小时、分钟
+      const [time, period] = timePart.split(/(?<=\d)(?=[A-Z]+)/);
+      const [hour, minute] = time.split(':');
+
+      // 根据月份的名称获取对应的数字表示
+      const date = new Date(Date.parse(datePart));
+
+      date.setHours(parseInt(hour));
+      date.setMinutes(parseInt(minute));
+
+      // 如果时间部分是下午，则需要增加12小时
+      if (period === 'PM' && hour !== '12') {
+        date.setHours(date.getHours() + 12);
+      }
+
+      return date;
+    } catch(error) {
+      console.error("Parse timestamp error, return 2020-12-01");
+      return new Date(Date.parse("December 01, 2020"));
+    }
+  }
+
+  // async migrationDB()
+  // {
+  //   let twitters = await this.twitterModel.find().exec();
+  //   for(let i = 0; i < twitters.length; ++i)
+  //   {
+  //     let twitter = twitters[i];
+  //     if(typeof(twitter.createAt) == typeof("string")){
+  //       const createAt = this.convertStringToDate(twitter.createAt);
+  //       const updateContent = { $set: { createAt: createAt } };
+  //       await this.twitterModel.updateOne({"_id": twitters[i]._id}, updateContent).exec();
+  //     }
+  //   }
+  // }
 }
