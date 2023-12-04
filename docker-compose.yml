@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  sme-backend:
+    image: info-backend:latest
+    restart: always
+    ports:
+      - 3001:3001
+    environment:
+      - DB_HOST=mongodb://52.156.40.155
+      - DB_USER=myron
+      - DB_PASS=monitor
+      - DB_NAME=info
+      - openaiKey=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
+      - openaiEnable=true

@@ -24,6 +24,7 @@ type FILTERRES = {
 @Injectable()
 export class OpenAIProvider {
   private readonly openai;
+  private readonly openaiEnable;
   private readonly summarySystemPrompt = summarySystemPrompt;
   private readonly summaryOutputSchema = summaryOutputSchema;
   private readonly filterSystemPrompt = filterSystemPrompt;
@@ -39,7 +40,7 @@ export class OpenAIProvider {
     this.openai = new OpenAI({
         apiKey: this.configService.get('openaiKey'),
     });
-
+    this.openaiEnable = Boolean(this.configService.get<boolean>('openaiEnable', false));
   }
 
   public getOpenAI() {
@@ -48,42 +49,65 @@ export class OpenAIProvider {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async tryToSummaryMultipleTwitter() {
-    let twitters = await this.twitterModel.find({ summarized: false }).limit(this.batchTwitterLength).exec();
+    if(!this.openaiEnable) {
+      console.log("openai not enabled and skip it");
+      return;
+    }
+    let twitters = await this.twitterModel.find({ summarized: false, type: "Post" }).sort({ retryCount: -1 }).limit(this.batchTwitterLength).exec();
     if (twitters.length < this.batchTwitterLength) {
       console.log("Not enough twitter to summary and skip this round");
       return;
     }
-    const twittersString = JSON.stringify(twitters.map((obj, index) => obj.text).reduce((acc, text, index) => {
-      acc[index] = text;
-      return acc;
-    }, {}));
-    console.log("summary content: ", twittersString);
-    const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
-      messages: [this.batchSummarySystemPrompt, { role: 'user', content: twittersString }],
-      model: 'gpt-3.5-turbo',
-      functions: [
-        {
-            name: "createBatchSummaryObject",
-            parameters: this.batchSummaryOutputSchema
-        }
-      ],
-      function_call: { name: "createBatchSummaryObject" }
-  });
+    let chatCompletion: OpenAI.Chat.ChatCompletion;
+    let isSuccess = true;
+    try{
+      const twittersString = JSON.stringify(twitters.map((obj, index) => obj.text).reduce((acc, text, index) => {
+        acc[index] = text;
+        return acc;
+      }, {}));
+      console.log("summary content: ", twittersString);
+      chatCompletion = await this.openai.chat.completions.create({
+        messages: [this.batchSummarySystemPrompt, { role: 'user', content: twittersString }],
+        model: 'gpt-3.5-turbo',
+        functions: [
+          {
+              name: "createBatchSummaryObject",
+              parameters: this.batchSummaryOutputSchema
+          }
+        ],
+        function_call: { name: "createBatchSummaryObject" }
+      });
+    } catch (error) {
+      console.error("Something wrong during the openai call");
+      isSuccess = false;
+    }
+
     let res;
     try {
+      if(isSuccess) {
         res = <BATCHSUMMARY>JSON.parse(chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
+      }
     } catch (error) {
         console.error('Invalid json format:', chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
-        return; // 停止执行方法
+        isSuccess = false;
     }
     res = res["result"];
-    if (twitters.length != res.length) {
+    if (isSuccess && twitters.length != res.length) {
       console.error("something wrong, failed to summary this round");
-      return;
+      isSuccess = false;
     }
-    for(let i = 0; i < twitters.length; ++i){
-      await this.saveToDatabase(twitters[i].linkToTweet, res[i]);
-      await this.twitterModel.updateOne({"_id": twitters[i]._id},{"summarized":true}).exec();
+    if(isSuccess) {
+      for(let i = 0; i < twitters.length; ++i){
+        await this.saveToDatabase(twitters[i].linkToTweet, res[i]);
+        await this.twitterModel.updateOne({"_id": twitters[i]._id},{"summarized":true}).exec();
+      }
+    } else {
+      for(let i = 0; i < twitters.length; ++i)
+      {
+        const lastestRetryCount = twitters[i].retryCount - 1;
+        const updateContent = {"retryCount":lastestRetryCount, "summarized": lastestRetryCount == 0};
+        await this.twitterModel.updateOne({"_id": twitters[i]._id}, updateContent).exec();
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import { assert, time } from 'console';
 @Injectable()
 export class TwitterService {
   private readonly usersSliceLength = 10;
+  private readonly retryCount = 3;
   constructor(
     @InjectModel('Twitter') private readonly twitterModel,
     @InjectModel('TwitterUser') private readonly twitterUserModel,
@@ -18,7 +19,20 @@ export class TwitterService {
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {
     // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
-    const model = new this.twitterModel({ ...createTwitterDto, type, summarized: false });
+    createTwitterDto.text = createTwitterDto.text.trim();
+    if(type == "New")
+    {
+      if(createTwitterDto.text.startsWith("@"))
+      {
+        type = "Reply";
+      } else if(createTwitterDto.text.startsWith("RT"))
+      {
+        type = "Retweet";
+      } else {
+        type = "Post";
+      }
+    }
+    const model = new this.twitterModel({ ...createTwitterDto, type, summarized: false, retryCount: this.retryCount });
     return await model.save();
   }
 

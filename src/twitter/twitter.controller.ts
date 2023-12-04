@@ -12,12 +12,12 @@ export class TwitterController {
 
   @Post("/like")
   storeLike(@Body() createTwitterDto: CreateTwitterDto) {
-    return this.twitterService.create(createTwitterDto, "like");
+    return this.twitterService.create(createTwitterDto, "Like");
   }
 
   @Post("/new")
   storeNew(@Body() createTwitterDto: CreateTwitterDto) {
-    return this.twitterService.create(createTwitterDto, "new");
+    return this.twitterService.create(createTwitterDto, "New");
   }
 
   @Post("/insertFollowings")
