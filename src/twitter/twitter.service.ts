@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { OpenAIProvider } from 'src/openai/openai.provider';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
 import { assert, time } from 'console';
 
 @Injectable()
@@ -116,16 +118,28 @@ export class TwitterService {
   async queryLastDaySummary()
   {
     const oneDayAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-    const summarized = await this.twitterSummaryModel.find({ summarizedAt: { $gte: oneDayAgo} }).exec();
-    const withText = (await Promise.all( summarized.map(async obj => {
-      const twitter = (await this.twitterModel.findOne({ linkToTweet: obj.linkToTweet }).exec());
-      return {
-        linkToTweet: obj._doc.linkToTweet,
-        score: obj._doc.score,
-        keyWords: obj._doc.keyWords,
-        text: twitter.text,
-        createAt: twitter.createAt};
-    }))).sort((a, b) => b.score - a.score);
+    const withText = await this.twitterSummaryModel.aggregate([
+      { $match: { summarizedAt: { $gte: oneDayAgo } } },
+      {
+        $lookup: {
+          from: "twitters",
+          localField: "linkToTweet",
+          foreignField: "linkToTweet",
+          as: "filter_twitter"
+        }
+      },
+      { $unwind: "$filter_twitter" },
+      {
+        $project: {
+          linkToTweet: "$linkToTweet",
+          score: "$score",
+          keyWords: "$keyWords",
+          text: "$filter_twitter.text",
+          createAt: "$filter_twitter.createAt"
+        }
+      },
+      { $sort: { score: -1 } }
+    ]).exec();
     return withText;
   }
 
