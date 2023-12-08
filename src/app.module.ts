@@ -8,6 +8,7 @@ import { TwitterSchema, TwitterUserSchema } from './twitter/schema/twitter.schem
 import { LoggerMiddleware } from './common/logger.middleware';
 import { OpenaiModule } from './openai/openai.module';
 import { TwitterSummarySchema } from './openai/schema/summary.schema';
+import { BacktaskModule } from './backtask/backtask.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -33,7 +34,8 @@ import { TwitterSummarySchema } from './openai/schema/summary.schema';
     { name: 'Summary', schema: TwitterSummarySchema }
   ]),
   TwitterModule,
-  OpenaiModule],
+  OpenaiModule,
+  BacktaskModule],
   controllers: [AppController],
   providers: [AppService],
 })
