@@ -22,6 +22,10 @@ export class TwitterService {
   async create(createTwitterDto: CreateTwitterDto, type: String) {
     // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
     createTwitterDto.text = createTwitterDto.text?.trim();
+    if(!createTwitterDto.text){
+      console.log("no text and return");
+      return;
+    }
     if(type == "New")
     {
       if(createTwitterDto.text.startsWith("@"))
