@@ -20,8 +20,10 @@ export class TwitterService {
   }
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {
-    // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.text);
+    // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.userName, createTwitterDto.text);
     createTwitterDto.text = createTwitterDto.text?.trim();
+    createTwitterDto.userName = createTwitterDto.userName?.trim();
+    createTwitterDto.linkToTweet = createTwitterDto.linkToTweet?.trim();
     if(!createTwitterDto.text){
       console.log("no text and return");
       return;

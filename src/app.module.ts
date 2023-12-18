@@ -9,6 +9,7 @@ import { LoggerMiddleware } from './common/logger.middleware';
 import { OpenaiModule } from './openai/openai.module';
 import { TwitterSummarySchema } from './openai/schema/summary.schema';
 import { BacktaskModule } from './backtask/backtask.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -35,7 +36,8 @@ import { BacktaskModule } from './backtask/backtask.module';
   ]),
   TwitterModule,
   OpenaiModule,
-  BacktaskModule],
+  BacktaskModule,
+  AnalysisModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -14,7 +14,7 @@ export class BacktaskService {
     ) {
     }
 
-    @Cron(CronExpression.EVERY_6_HOURS)
+    @Cron(CronExpression.EVERY_2_HOURS)
     async tryToArchiveTwitter() {
         const archiveDate = new Date(Date.now() - this.archiveDay * 24 * 60 * 60 * 1000);
         // 查询要归档的文档
@@ -27,7 +27,7 @@ export class BacktaskService {
         await this.twitterModel.deleteMany({ _id: { $in: documentsToArchive.map(doc => doc._id) } }).exec();
     }
 
-    @Cron(CronExpression.EVERY_7_HOURS)
+    @Cron(CronExpression.EVERY_2_HOURS)
     async tryToArchiveTwitterSummary() {
         const archiveDate = new Date(Date.now() - this.archiveDay * 24 * 60 * 60 * 1000);
         // 查询要归档的文档
@@ -38,5 +38,15 @@ export class BacktaskService {
 
         // 删除已归档的文档
         await this.twitterSummaryModel.deleteMany({ _id: { $in: documentsToArchive.map(doc => doc._id) } }).exec();
+    }
+
+    // @Cron(CronExpression.EVERY_10_SECONDS)
+    async tryToUpdateDB() {
+        console.log("start update");
+        const documentsToUpdate = await this.twitterArchiveModel.find().exec();
+        for (const document of documentsToUpdate) {
+            await this.twitterArchiveModel.updateOne({ _id: document._id }, { linkToTweet: document.linkToTweet.trim(), userName: document.userName.trim() }).exec();
+        }
+        console.log("update finished");
     }
 }

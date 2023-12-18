@@ -5,5 +5,6 @@ export const TwitterSummarySchema = new mongoose.Schema({
   linkToTweet: String,
   keyWords: [String],
   score: Number,
-  summarizedAt: Date
+  summarizedAt: Date,
+  userName: String
 });

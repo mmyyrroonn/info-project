@@ -98,7 +98,7 @@ export class OpenAIProvider {
     }
     if(isSuccess) {
       for(let i = 0; i < twitters.length; ++i){
-        await this.saveToDatabase(twitters[i].linkToTweet, res[i]);
+        await this.saveToDatabase(twitters[i].linkToTweet, twitters[i].userName, res[i]);
         await this.twitterModel.updateOne({"_id": twitters[i]._id},{"summarized":true}).exec();
       }
     } else {
@@ -111,7 +111,7 @@ export class OpenAIProvider {
     }
   }
 
-  public async summry(linkToTweet: string, content: string) {
+  public async summry(linkToTweet: string, userName: string, content: string) {
     console.log("Try to summary twitter content: ", content);
     const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
         messages: [this.summarySystemPrompt, { role: 'user', content: content }],
@@ -131,7 +131,7 @@ export class OpenAIProvider {
         console.error('Invalid json format:', chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
         return; // 停止执行方法
     }
-    await this.saveToDatabase(linkToTweet, res);
+    await this.saveToDatabase(linkToTweet, userName, res);
   }
 
   public async filter(content: string) {
@@ -157,7 +157,7 @@ export class OpenAIProvider {
     return res["result"];
   }
 
-  private async saveToDatabase(linkToTweet: string, res: any) {
+  private async saveToDatabase(linkToTweet: string, userName:string, res: any) {
     if (res === null || res.keywords === null || res.score === null){
         console.log('Invalid response object:', res);
         return; // 停止执行方法
@@ -169,7 +169,7 @@ export class OpenAIProvider {
       await this.twitterSummaryModel.updateOne({"_id": existingSummary._id},{"keyWords":res.keywords, "score":res.score, summarizedAt: new Date() }).exec();
     } else {
       // 否则进行创建新的记录
-      const newSummary = new this.twitterSummaryModel({ linkToTweet, keyWords: res.keywords, score: res.score, summarizedAt: new Date()});
+      const newSummary = new this.twitterSummaryModel({ linkToTweet, userName, keyWords: res.keywords, score: res.score, summarizedAt: new Date()});
       await newSummary.save();
     }
   }
