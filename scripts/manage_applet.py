@@ -48,6 +48,10 @@ def open_ifttt():
     driver.get(ifttt_address)
     random_sleep(5)
 
+def open_url(url):
+    driver.get(url)
+    random_sleep(10)
+
 
 def click(xpath, max_retry = 5):
     while(max_retry):
@@ -158,13 +162,43 @@ def already_created(user_handler):
         return True
     return False
 
+def check_and_fetch_url(user_handler):
+    User = Query()
+    result = db.search(User.handler == user_handler)
+    if(len(result) != 0):
+        rst = result[0]
+        if "isArchived" in rst.keys():
+            if rst["isArchived"] == True:
+                return None
+        rst["isArchived"] = True
+        db.update(rst, User.name==rst["name"])
+        return rst["url"]
+    return None
+
 def fetch_following_handler():
     with open('following', 'r') as file:
         lines = file.readlines()
     lines_list = [line.strip() for line in lines]
     return lines_list
 
-def main():
+def fetch_archive_handler():
+    with open('archive', 'r') as file:
+        lines = file.readlines()
+    lines_list = [line.strip() for line in lines]
+    return lines_list
+
+def click_archive_confirm():
+    # 点击弹窗的确认按钮
+    alert = driver.switch_to.alert
+    alert.accept()
+    random_sleep(5)
+
+def archive_page():
+    # click archive
+    click("//html/body/main/div[1]/div/div[7]/a")
+    click_archive_confirm()
+
+def create_applet():
     handler_list = fetch_following_handler()
     open_ifttt()
     init_click_create()
@@ -180,5 +214,17 @@ def main():
         update_db(user_handler)
         next_create()
     db.close()
-main()
+
+def archive_applet():
+    handler_list = fetch_archive_handler()
+    open_ifttt()
+    for user_handler in handler_list:
+        url = check_and_fetch_url(user_handler)
+        if url is None:
+            print("Already archived for {}", user_handler)
+            continue
+        open_url(url)
+        archive_page()
+
+create_applet()
 random_sleep(5)
