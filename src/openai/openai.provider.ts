@@ -68,7 +68,7 @@ export class OpenAIProvider {
       console.log("summary content: ", twittersString);
       chatCompletion = await this.openai.chat.completions.create({
         messages: [this.batchSummarySystemPrompt, { role: 'user', content: twittersString }],
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo-1106',
         functions: [
           {
               name: "createBatchSummaryObject",
@@ -115,7 +115,7 @@ export class OpenAIProvider {
     console.log("Try to summary twitter content: ", content);
     const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
         messages: [this.summarySystemPrompt, { role: 'user', content: content }],
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo-1106',
         functions: [
           {
               name: "createSummaryObject",
@@ -138,7 +138,7 @@ export class OpenAIProvider {
     console.log("Try to filter following users: ", content);
     const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
         messages: [this.filterSystemPrompt, { role: 'user', content: content }],
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo-1106',
         functions: [
           {
               name: "createFilterObject",
