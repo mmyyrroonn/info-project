@@ -166,6 +166,10 @@ export class TwitterService {
       date.setHours(parseInt(hour));
       date.setMinutes(parseInt(minute));
 
+      // 如果时间是凌晨，则需要减少12小时
+      if (period == 'AM' && hour == '12') {
+        date.setHours(date.getHours() - 12);
+      }
       // 如果时间部分是下午，则需要增加12小时
       if (period === 'PM' && hour !== '12') {
         date.setHours(date.getHours() + 12);
