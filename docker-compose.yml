@@ -12,4 +12,4 @@ services:
       - DB_PASS=monitor
       - DB_NAME=info
       - openaiKey=${openaiKey}
-      - openaiEnable=true
+      - openaiEnable=

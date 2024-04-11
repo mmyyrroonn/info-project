@@ -20,10 +20,10 @@ export class TwitterService {
   }
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {
-    // this.openaiService.summry(createTwitterDto.linkToTweet, createTwitterDto.userName, createTwitterDto.text);
+    // this.openaiService.summry(createTwitterDto.tweetId, createTwitterDto.userName, createTwitterDto.text);
     createTwitterDto.text = createTwitterDto.text?.trim();
     createTwitterDto.userName = createTwitterDto.userName?.trim();
-    createTwitterDto.linkToTweet = createTwitterDto.linkToTweet?.trim();
+    const tweetId = createTwitterDto.linkToTweet?.trim().split('/')[-1];
     if(!createTwitterDto.text){
       console.log("no text and return");
       return;
@@ -42,6 +42,7 @@ export class TwitterService {
     }
     const model = new this.twitterModel({
       ...createTwitterDto,
+      tweetId,
       createAt: this.convertStringToDate(createTwitterDto.createAt),
       type,
       summarized: false,
@@ -129,15 +130,15 @@ export class TwitterService {
       {
         $lookup: {
           from: "twitters",
-          localField: "linkToTweet",
-          foreignField: "linkToTweet",
+          localField: "tweetId",
+          foreignField: "tweetId",
           as: "filter_twitter"
         }
       },
       { $unwind: "$filter_twitter" },
       {
         $project: {
-          linkToTweet: "$linkToTweet",
+          tweetId: "$tweetId",
           score: "$score",
           keyWords: "$keyWords",
           text: "$filter_twitter.text",
