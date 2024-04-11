@@ -23,9 +23,10 @@ export class TwitterService {
     // this.openaiService.summry(createTwitterDto.tweetId, createTwitterDto.userName, createTwitterDto.text);
     createTwitterDto.text = createTwitterDto.text?.trim();
     createTwitterDto.userName = createTwitterDto.userName?.trim();
-    const tweetId = createTwitterDto.linkToTweet?.trim().split('/')[-1];
-    if(!createTwitterDto.text){
-      console.log("no text and return");
+    const parts = createTwitterDto.linkToTweet.trim().split('/');
+    const tweetId = parts[parts.length - 1];
+    if(!createTwitterDto.text || !tweetId){
+      console.log("no text or tweet id and return");
       return;
     }
     if(type == "New")
