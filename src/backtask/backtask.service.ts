@@ -45,7 +45,7 @@ export class BacktaskService {
     //     console.log("start update");
     //     const documentsToUpdate = await this.twitterArchiveModel.find().exec();
     //     for (const document of documentsToUpdate) {
-    //         await this.twitterArchiveModel.updateOne({ _id: document._id }, { linkToTweet: document.linkToTweet.trim(), userName: document.userName.trim() }).exec();
+    //         await this.twitterArchiveModel.updateOne({ _id: document._id }, { tweetId: document.tweetId.trim(), userName: document.userName.trim() }).exec();
     //     }
     //     console.log("update finished");
     // }

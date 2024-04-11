@@ -3,7 +3,7 @@ import * as mongoose from 'mongoose';
 export const TwitterSchema = new mongoose.Schema({
   text: String,
   userName: String,
-  linkToTweet: String,
+  tweetId: String,
   tweetEmbedCode: String,
   createAt: Date,
   type: String, // Post, Like, Retweet, Reply
