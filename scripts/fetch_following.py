@@ -8,7 +8,7 @@ screen_name = "BTC521"
 querystring = {"screenname": screen_name}
 
 headers = {
-	"X-RapidAPI-Key": "bb7019b72bmsh5cf2edde2484ad0p1e10c2jsneb5cac9b92ca",
+	"X-RapidAPI-Key": "xxx your api",
 	"X-RapidAPI-Host": "twitter-api45.p.rapidapi.com"
 }
 
