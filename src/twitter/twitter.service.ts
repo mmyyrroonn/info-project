@@ -1,22 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { OpenAIProvider } from 'src/openai/openai.provider';
+import { Cron, CronExpression } from '@nestjs/schedule';
+const axios = require('axios');
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { assert, time } from 'console';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TwitterService {
-  private readonly usersSliceLength = 10;
   private readonly retryCount = 3;
+  private readonly rapidapikey;
+  private readonly queryHour = 12;
   constructor(
     @InjectModel('Twitter') private readonly twitterModel,
     @InjectModel('TwitterUser') private readonly twitterUserModel,
     @InjectModel('Summary') private readonly twitterSummaryModel,
-    private readonly openaiService: OpenAIProvider
+    private readonly openaiService: OpenAIProvider,
+    private readonly configService: ConfigService
   ) {
-
+    this.rapidapikey = this.configService.get('rapidapikey');
   }
 
   async create(createTwitterDto: CreateTwitterDto, type: String) {
@@ -50,77 +55,6 @@ export class TwitterService {
       retryCount: this.retryCount
     });
     return await model.save();
-  }
-
-  async storeUsersAndFilter(users) {
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      delete user.id;
-
-      // Check if user with the same ID already exists in the database
-      const existingUser = await this.twitterUserModel.findOne({ rest_id: user.rest_id });
-      // TODO: support update and retrigger judgement
-
-      if (!existingUser) {
-        // User does not exist, insert into the database
-        const model = new this.twitterUserModel({
-          ...user,
-          isWorthAnalyze: false,
-          filtered: false,
-          lastFilterTime: new Date(),
-          lastUpdateTime: new Date()
-        });
-
-        await model.save();
-      }
-    }
-  }
-
-  async filterFollowing(count) {
-    try {
-      let users = await this.twitterUserModel.find({ filtered: false }).limit(this.usersSliceLength).exec();
-
-      const res: Array<boolean> = await this.toFilterUsers(users);
-      if (users.length != res.length) {
-        console.error("something wrong, failed this time");
-        return;
-      }
-      for(let i = 0; i < users.length; i++) {
-        let user = users[i];
-        const isWorth = res[i];
-        await this.twitterUserModel.updateOne({"_id": user._id}, {"isWorthAnalyze": isWorth, "filtered": true, "lastFilterTime": new Date()}).exec();
-      }
-
-      console.log(`Updated ${users.length} users.`);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-
-  async toFilterUsers(users) {
-    let concatenatedString = '[';
-
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      concatenatedString += '"';
-      concatenatedString += user.legacy.description?user.legacy.description:"null";
-      concatenatedString += '"';
-      concatenatedString += ',';
-    }
-
-    concatenatedString += ']';
-    // 调用 openaiService 的 filter 方法，传递拼接后的字符串作为参数
-    const results = await this.openaiService.filter(concatenatedString);
-
-    console.log(results);
-    return results;
-  }
-
-  async queryWorthUsers() {
-    const users = await this.twitterUserModel.find({ isWorthAnalyze: true }).exec();
-    const names = users.map(user => user.legacy.screen_name);
-    return names;
   }
 
   async queryLastDaySummary()
@@ -181,6 +115,84 @@ export class TwitterService {
     } catch(error) {
       console.error("Parse timestamp error, return 2020-12-01");
       return new Date(Date.parse("December 01, 2020"));
+    }
+  }
+
+  // @Cron(CronExpression.EVERY_MINUTE)
+  async tryToQueryNewTweets() {
+    // 查找所有 apiQuery 为 true 的用户
+    const users = await this.twitterUserModel
+      .find({ apiQuery: true })
+      .sort({ apiQueryLastTime: 1 }) // 1 for ascending order
+      .limit(10); // limits the result to 10 documents
+
+
+    console.log(`Total ${users.length} users to query`)
+    // 对每个用户进行轮询处理
+    for (const user of users) {
+      // 这里添加您的轮询逻辑
+      if(user.apiQueryLastTime && new Date(user.apiQueryLastTime.getTime() + this.queryHour * 60 * 60 * 1000) > new Date()){
+        // Skip the current iteration if the condition is true
+        continue;
+      }
+      const timeline = await this.queryOneUserTweet(user.screen_name);
+      if (!timeline) {
+        continue; // 如果timeline为空，跳过当前用户
+      }
+      for ( const tweet of timeline) {
+        const tweetCreatedAt = new Date(tweet.created_at);
+        if (user.apiQueryLastTime && tweetCreatedAt < user.apiQueryLastTime) {
+          break;
+        }
+        const existingTwitter = await this.twitterModel.findOne({ tweetId: tweet.tweet_id }).exec();
+        if (existingTwitter) {
+          continue
+        }
+        let type = "Post";
+        if(tweet.text.startsWith("@"))
+        {
+          type = "Reply";
+        } else if(tweet.text.startsWith("RT"))
+        {
+          type = "Retweet";
+        }
+        const model = new this.twitterModel({
+          text: tweet.text,
+          userName: user.screen_name,
+          tweetId: tweet.tweet_id,
+          createAt: tweetCreatedAt,
+          type,
+          summarized: false,
+          retryCount: this.retryCount
+        });
+        await model.save();
+      }
+
+      // 更新 apiQueryLastTime 到最新时间
+      await this.twitterUserModel.updateOne({"_id": user._id},{apiQueryLastTime: new Date() }).exec();
+    }
+    console.log("Query twitter success")
+  }
+
+  async queryOneUserTweet(name: string){
+    const options = {
+      method: 'GET',
+      url: 'https://twitter-api45.p.rapidapi.com/timeline.php',
+      params: {
+        screenname: name
+      },
+      headers: {
+        'X-RapidAPI-Key': this.rapidapikey,
+        'X-RapidAPI-Host': 'twitter-api45.p.rapidapi.com'
+      }
+    };
+    
+    try {
+      const response = await axios.request(options);
+      return response.data["timeline"];
+    } catch (error) {
+      console.error(error);
+      return [];
     }
   }
 

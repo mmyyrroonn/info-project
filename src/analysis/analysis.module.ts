@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { AnalysisController } from './analysis.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { TwitterSchema, TwitterUserSchema } from 'src/twitter/schema/twitter.schema';
+import { TwitterSchema } from 'src/twitter/schema/twitter.schema';
 import { TwitterSummarySchema } from 'src/openai/schema/summary.schema';
+import { TwitterUserSchema } from 'src/twitteruser/schema/twitteruser.schema';
 
 @Module({imports: [
   MongooseModule.forFeature([
