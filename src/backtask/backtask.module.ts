@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { BacktaskService } from './backtask.service';
 import { BacktaskController } from './backtask.controller';
 import { TwitterSummarySchema } from 'src/openai/schema/summary.schema';
-import { TwitterSchema, TwitterUserSchema } from 'src/twitter/schema/twitter.schema';
+import { TwitterSchema } from 'src/twitter/schema/twitter.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TwitterUserSchema } from 'src/twitteruser/schema/twitteruser.schema';
 
 @Module({imports: [
   MongooseModule.forFeature([

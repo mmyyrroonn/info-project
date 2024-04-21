@@ -10,5 +10,3 @@ export const TwitterSchema = new mongoose.Schema({
   summarized: Boolean,
   retryCount: Number
 });
-
-export const TwitterUserSchema = new mongoose.Schema({}, { strict: false });

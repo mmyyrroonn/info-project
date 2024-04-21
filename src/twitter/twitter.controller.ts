@@ -20,32 +20,6 @@ export class TwitterController {
     return this.twitterService.create(createTwitterDto, "New");
   }
 
-  @Post("/insertFollowings")
-  @UseInterceptors(FileInterceptor('followings', { storage: memoryStorage() }))
-  insertFollowings(@UploadedFile(new ParseFilePipeBuilder()
-  .addFileTypeValidator({
-    fileType: 'json',
-  })
-  .build(),) userList: Express.Multer.File) {
-
-    const usersData = JSON.parse(userList.buffer.toString());
-
-    // 插入数据库
-    this.twitterService.storeUsersAndFilter(usersData);
-
-    return "success";
-  }
-
-  @Post("/filterFollowings")
-  filterFollowing() {
-    return this.twitterService.filterFollowing(10);
-  }
-
-  @Get("/queryWorthUsers")
-  queryWorthUsers() {
-    return this.twitterService.queryWorthUsers();
-  }
-
   @Get("/queryLastDaySummary")
   queryLastDaySummary() {
     return this.twitterService.queryLastDaySummary();
