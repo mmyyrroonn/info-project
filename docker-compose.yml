@@ -14,5 +14,5 @@ services:
       - openaiKey=${openaiKey}
       - openaiEnable=
       - embedAIEnable=true
-      - rapidapikey=bb7019b72bmsh5cf2edde2484ad0p1e10c2jsneb5cac9b92ca
+      - rapidapikey=${rapidapikey}
       - milvusEndpoint=52.156.40.155:19530
