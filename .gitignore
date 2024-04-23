@@ -37,3 +37,6 @@ lerna-debug.log*
 
 # Env Settings
 .env
+
+# milvus
+/volumes

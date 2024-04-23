@@ -13,3 +13,6 @@ services:
       - DB_NAME=info
       - openaiKey=${openaiKey}
       - openaiEnable=
+      - embedAIEnable=true
+      - rapidapikey=${rapidapikey}
+      - milvusEndpoint=52.156.40.155:19530

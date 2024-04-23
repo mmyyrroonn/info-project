@@ -12,6 +12,7 @@ import { BacktaskModule } from './backtask/backtask.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { TwitteruserModule } from './twitteruser/twitteruser.module';
 import { TwitterUserSchema } from './twitteruser/schema/twitteruser.schema';
+import { MilvusModule } from './milvus/milvus.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -40,7 +41,8 @@ import { TwitterUserSchema } from './twitteruser/schema/twitteruser.schema';
   OpenaiModule,
   BacktaskModule,
   AnalysisModule,
-  TwitteruserModule],
+  TwitteruserModule,
+  MilvusModule],
   controllers: [AppController],
   providers: [AppService],
 })

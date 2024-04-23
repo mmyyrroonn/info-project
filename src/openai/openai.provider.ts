@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { batchSummaryOutputSchema, batchSummarySystemPrompt, filterOutputSchema, filterSystemPrompt, summaryOutputSchema, summarySystemPrompt } from './openai.prompt';
+import { MilvusService } from 'src/milvus/milvus.service';
 
 type SUMMARY = {
   keywords: [string]
@@ -25,6 +26,7 @@ type FILTERRES = {
 export class OpenAIProvider {
   private readonly openai;
   private readonly openaiEnable;
+  private readonly embedAIEnable;
   private readonly summarySystemPrompt = summarySystemPrompt;
   private readonly summaryOutputSchema = summaryOutputSchema;
   private readonly filterSystemPrompt = filterSystemPrompt;
@@ -34,13 +36,16 @@ export class OpenAIProvider {
   private readonly batchTwitterLength = 10;
   constructor(
     @InjectModel('Summary') private readonly twitterSummaryModel,
+    @InjectModel('Embeding') private readonly twitterEmbedingModel,
     @InjectModel('Twitter') private readonly twitterModel,
+    private readonly milvusService: MilvusService,
     private readonly configService: ConfigService
   ) {
     this.openai = new OpenAI({
         apiKey: this.configService.get('openaiKey'),
     });
     this.openaiEnable = Boolean(this.configService.get<boolean>('openaiEnable', false));
+    this.embedAIEnable = Boolean(this.configService.get<boolean>('embedAIEnable', false));
   }
 
   public getOpenAI() {
@@ -98,7 +103,7 @@ export class OpenAIProvider {
     }
     if(isSuccess) {
       for(let i = 0; i < twitters.length; ++i){
-        await this.saveToDatabase(twitters[i].tweetId, twitters[i].userName, res[i]);
+        await this.saveToSummary(twitters[i].tweetId, twitters[i].userName, res[i]);
         await this.twitterModel.updateOne({"_id": twitters[i]._id},{"summarized":true}).exec();
       }
     } else {
@@ -110,6 +115,43 @@ export class OpenAIProvider {
       }
     }
   }
+
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async tryToEmbedMultipleTwitter() {
+    if(!this.embedAIEnable) {
+      console.log("embedAIEnable is not enabled and skip it");
+      return;
+    }
+    let twitters = await this.twitterModel.find({ embedded: false, type: "Post" }).sort({ retryCount: -1 }).limit(this.batchTwitterLength).exec();
+    if (twitters.length < this.batchTwitterLength) {
+      console.log("Not enough twitter to embed and skip this round");
+      return;
+    }
+    for(const twitter of twitters) {
+      try {
+        const embedding = await this.getEmbedding(twitter.text);
+        await this.saveToEmbedding(twitter.tweetId, twitter.userName, embedding);
+        await this.milvusService.insertNewTweetIntoLatest(twitter.tweetId, twitter.createAt, 0, embedding.data[0].embedding)
+        await this.twitterModel.updateOne({"_id": twitter._id},{"embedded":true}).exec();
+      }
+      catch (error) {
+        console.error("Something wrong during the openai call");
+        console.error(error);
+      }
+      
+    }
+  }
+
+  public async getEmbedding(text) {
+    const embedding = await this.openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+      encoding_format: "float",
+    });
+    return embedding;
+  }
+
 
   public async summry(tweetId: string, userName: string, content: string) {
     console.log("Try to summary twitter content: ", content);
@@ -131,7 +173,7 @@ export class OpenAIProvider {
         console.error('Invalid json format:', chatCompletion["choices"][0]["message"]["function_call"]["arguments"]);
         return; // 停止执行方法
     }
-    await this.saveToDatabase(tweetId, userName, res);
+    await this.saveToSummary(tweetId, userName, res);
   }
 
   public async filter(content: string) {
@@ -157,7 +199,7 @@ export class OpenAIProvider {
     return res["result"];
   }
 
-  private async saveToDatabase(tweetId: string, userName:string, res: any) {
+  private async saveToSummary(tweetId: string, userName:string, res: any) {
     if (res === null || res.keywords === null || res.score === null){
         console.log('Invalid response object:', res);
         return; // 停止执行方法
@@ -171,6 +213,23 @@ export class OpenAIProvider {
       // 否则进行创建新的记录
       const newSummary = new this.twitterSummaryModel({ tweetId, userName, keyWords: res.keywords, score: res.score, summarizedAt: new Date()});
       await newSummary.save();
+    }
+  }
+
+  private async saveToEmbedding(tweetId: string, userName:string, res: any) {
+    if (res.length){
+        console.log('Invalid response object:', res);
+        return; // 停止执行方法
+    }
+    const existingEmbeding = await this.twitterEmbedingModel.findOne({ tweetId }).exec();
+
+    if (existingEmbeding) {
+      // 如果数据库中已经存在与tweetId相匹配的记录，则进行更新
+      await this.twitterEmbedingModel.updateOne({"_id": existingEmbeding._id},{"feature":res, embeddedAt: new Date() }).exec();
+    } else {
+      // 否则进行创建新的记录
+      const newEmbedding = new this.twitterEmbedingModel({ tweetId, userName, feature: res, embeddedAt: new Date()});
+      await newEmbedding.save();
     }
   }
 }
