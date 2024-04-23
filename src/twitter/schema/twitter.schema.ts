@@ -8,5 +8,6 @@ export const TwitterSchema = new mongoose.Schema({
   createAt: Date,
   type: String, // Post, Like, Retweet, Reply
   summarized: Boolean,
+  embedded: Boolean,
   retryCount: Number
 });

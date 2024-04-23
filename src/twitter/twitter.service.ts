@@ -8,6 +8,8 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { assert, time } from 'console';
 import { ConfigService } from '@nestjs/config';
+import { MilvusService } from 'src/milvus/milvus.service';
+import { QueryTwitterDto } from './dto/query-twitter.dto';
 
 @Injectable()
 export class TwitterService {
@@ -18,7 +20,9 @@ export class TwitterService {
     @InjectModel('Twitter') private readonly twitterModel,
     @InjectModel('TwitterUser') private readonly twitterUserModel,
     @InjectModel('Summary') private readonly twitterSummaryModel,
+    @InjectModel('Embeding') private readonly twitterEmbedingModel,
     private readonly openaiService: OpenAIProvider,
+    private readonly milvusService: MilvusService,
     private readonly configService: ConfigService
   ) {
     this.rapidapikey = this.configService.get('rapidapikey');
@@ -52,6 +56,7 @@ export class TwitterService {
       createAt: this.convertStringToDate(createTwitterDto.createAt),
       type,
       summarized: false,
+      embedded: false,
       retryCount: this.retryCount
     });
     return await model.save();
@@ -83,6 +88,31 @@ export class TwitterService {
       { $sort: { score: -1 } }
     ]).exec();
     return withText;
+  }
+
+  async queryRelatedTwitter(queryTwitterDto: QueryTwitterDto) {
+    const feature = (await this.openaiService.getEmbedding(queryTwitterDto.query_text)).data[0].embedding;
+    const queryResult = await this.milvusService.queryRelatedTwitter(feature, queryTwitterDto.limit);
+    let result = []
+    for(const query of queryResult) {
+      const tweet = await this.twitterModel.findOne({ tweetId: query.tweet_id });
+      result.push({
+        text: tweet.text,
+        userName: tweet.userName,
+        createAt: tweet.createAt,
+        score: query.score,
+        tweetId: tweet.tweetId
+      })
+    }
+    return result;
+  }
+
+  async insertHistoryData() {
+    const oneDayAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const queryResult = await this.twitterEmbedingModel.find({embeddedAt: { $gte: oneDayAgo }});
+    for(const res of queryResult){
+      await this.milvusService.insertNewTweetIntoLatest(res.tweetId, res.embeddedAt, 0, res.feature[0].data[0].embedding);
+    }
   }
 
   convertStringToDate(dateString) {
@@ -163,6 +193,7 @@ export class TwitterService {
           createAt: tweetCreatedAt,
           type,
           summarized: false,
+          embedded: false,
           retryCount: this.retryCount
         });
         await model.save();

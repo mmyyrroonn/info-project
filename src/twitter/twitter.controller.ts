@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, UploadedFile, UseInterceptors, ParseFilePipeBuilder } from '@nestjs/common';
 import { TwitterService } from './twitter.service';
 import { CreateTwitterDto } from './dto/create-twitter.dto';
+import { QueryTwitterDto } from './dto/query-twitter.dto';
 import { UpdateTwitterDto } from './dto/update-twitter.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
@@ -24,6 +25,16 @@ export class TwitterController {
   queryLastDaySummary() {
     return this.twitterService.queryLastDaySummary();
   }
+
+  @Get("/queryRelatedTwitter")
+  queryRelatedTwitter(@Body() queryTwitterDto: QueryTwitterDto) {
+    return this.twitterService.queryRelatedTwitter(queryTwitterDto);
+  }
+
+  // @Get("/insertHistoryData")
+  // insertHistoryData() {
+  //   return this.twitterService.insertHistoryData();
+  // }
 
   // @Post("/migration")
   // testParse(@Body() createTwitterDto: CreateTwitterDto) {
