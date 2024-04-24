@@ -26,7 +26,7 @@ export class TwitterController {
     return this.twitterService.queryLastDaySummary();
   }
 
-  @Get("/queryRelatedTwitter")
+  @Post("/queryRelatedTwitter")
   queryRelatedTwitter(@Body() queryTwitterDto: QueryTwitterDto) {
     return this.twitterService.queryRelatedTwitter(queryTwitterDto);
   }
