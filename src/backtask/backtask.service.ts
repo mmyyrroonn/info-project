@@ -9,8 +9,10 @@ export class BacktaskService {
     constructor(
         @InjectModel('Summary') private readonly twitterSummaryModel,
         @InjectModel('Twitter') private readonly twitterModel,
+        @InjectModel('Embedings') private readonly twitterEmbedingModel,
         @InjectModel('SummaryArchive') private readonly twitterSummaryArchiveModel,
         @InjectModel('TwitterArchive') private readonly twitterArchiveModel,
+        @InjectModel('EmbedingsArchive') private readonly twitterEmbedingArchiveModel,
     ) {
     }
 
@@ -38,6 +40,19 @@ export class BacktaskService {
 
         // 删除已归档的文档
         await this.twitterSummaryModel.deleteMany({ _id: { $in: documentsToArchive.map(doc => doc._id) } }).exec();
+    }
+
+    @Cron(CronExpression.EVERY_HOUR)
+    async tryToArchiveTwitterEmbedings() {
+        const archiveDate = new Date(Date.now() - this.archiveDay * 24 * 60 * 60 * 1000);
+        // 查询要归档的文档
+        const documentsToArchive = await this.twitterEmbedingModel.find({ embeddedAt: { $lt: archiveDate } }).limit(this.maxArchiveNumber).exec();
+
+        // 将查询到的文档插入到归档集合中
+        await this.twitterEmbedingArchiveModel.insertMany(documentsToArchive);
+
+        // 删除已归档的文档
+        await this.twitterEmbedingModel.deleteMany({ _id: { $in: documentsToArchive.map(doc => doc._id) } }).exec();
     }
 
     // @Cron(CronExpression.EVERY_10_SECONDS)

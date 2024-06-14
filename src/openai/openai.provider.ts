@@ -117,7 +117,7 @@ export class OpenAIProvider {
   }
 
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async tryToEmbedMultipleTwitter() {
     if(!this.embedAIEnable) {
       console.log("embedAIEnable is not enabled and skip it");
@@ -132,7 +132,8 @@ export class OpenAIProvider {
       try {
         const embedding = await this.getEmbedding(twitter.text);
         await this.saveToEmbedding(twitter.tweetId, twitter.userName, embedding);
-        await this.milvusService.insertNewTweetIntoLatest(twitter.tweetId, twitter.createAt, 0, embedding.data[0].embedding)
+        await this.milvusService.insertNewTweetIntoLatest(twitter.tweetId, twitter.createAt, 0, embedding.data[0].embedding);
+        console.log(`Insert embedding success ${twitter.tweetId}`);
         await this.twitterModel.updateOne({"_id": twitter._id},{"embedded":true}).exec();
       }
       catch (error) {

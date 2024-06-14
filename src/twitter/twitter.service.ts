@@ -107,8 +107,9 @@ export class TwitterService {
     return result;
   }
 
-  async insertHistoryData() {
-    const oneDayAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  async insertHistoryDataIntoMilvus() {
+    this.milvusService.initLatestTwitterCollection();
+    const oneDayAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
     const queryResult = await this.twitterEmbedingModel.find({embeddedAt: { $gte: oneDayAgo }});
     for(const res of queryResult){
       await this.milvusService.insertNewTweetIntoLatest(res.tweetId, res.embeddedAt, 0, res.feature[0].data[0].embedding);

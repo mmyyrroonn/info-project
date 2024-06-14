@@ -6,14 +6,17 @@ import { TwitterSchema } from 'src/twitter/schema/twitter.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TwitterUserSchema } from 'src/twitteruser/schema/twitteruser.schema';
+import { EmbedingSchema } from 'src/openai/schema/embedding.schema';
 
 @Module({imports: [
   MongooseModule.forFeature([
     { name: 'Twitter', schema: TwitterSchema },
+    { name: 'TwitterArchive', schema: TwitterSchema },
     { name: 'TwitterUser', schema: TwitterUserSchema },
     { name: 'Summary', schema: TwitterSummarySchema },
-    { name: 'TwitterArchive', schema: TwitterSchema },
     { name: 'SummaryArchive', schema: TwitterSummarySchema },
+    { name: 'Embedings', schema: EmbedingSchema },
+    { name: 'EmbedingsArchive', schema: EmbedingSchema },
   ]),
   ScheduleModule.forRoot()
   ],

@@ -31,10 +31,10 @@ export class TwitterController {
     return this.twitterService.queryRelatedTwitter(queryTwitterDto);
   }
 
-  // @Get("/insertHistoryData")
-  // insertHistoryData() {
-  //   return this.twitterService.insertHistoryData();
-  // }
+  @Get("/insertHistoryDataIntoMilvus")
+  insertHistoryData() {
+    return this.twitterService.insertHistoryDataIntoMilvus();
+  }
 
   // @Post("/migration")
   // testParse(@Body() createTwitterDto: CreateTwitterDto) {
