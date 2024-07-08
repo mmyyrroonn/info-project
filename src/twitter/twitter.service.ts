@@ -10,6 +10,7 @@ import { assert, time } from 'console';
 import { ConfigService } from '@nestjs/config';
 import { MilvusService } from 'src/milvus/milvus.service';
 import { QueryTwitterDto } from './dto/query-twitter.dto';
+import { filteredKOLs } from './kols';
 
 @Injectable()
 export class TwitterService {
@@ -89,6 +90,25 @@ export class TwitterService {
     ]).exec();
     return withText;
   }
+
+  async queryLastestTwitter()
+  {
+    const hours = 6;
+    const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
+    const twitterRecords = await this.twitterModel.aggregate([
+      // 根据时间过滤最近 6 小时的记录
+      { $match: { type: "Post" } },
+      { $match: { createAt: { $gte: hoursAgo } } },
+
+      // 过滤掉不在筛选列表中的记录
+      { $match: { userName: { $in: filteredKOLs } } },
+      { $sort: { createAt: -1 } }
+      // 可以根据需要添加其他聚合阶段，如排序、限制数量等
+    ]).exec();;
+
+    return twitterRecords;
+  }
+
 
   async queryRelatedTwitter(queryTwitterDto: QueryTwitterDto) {
     const feature = (await this.openaiService.getEmbedding(queryTwitterDto.query_text)).data[0].embedding;

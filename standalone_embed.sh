@@ -32,11 +32,12 @@ EOF
         -e ETCD_DATA_DIR=/var/lib/milvus/etcd \
         -e ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml \
         -e COMMON_STORAGETYPE=local \
-        -v $(pwd)/volumes/milvus:/var/lib/milvus \
+        -v /home/myron/milvus-volumes/milvus:/var/lib/milvus \
         -v $(pwd)/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml \
         -p 19530:19530 \
         -p 9091:9091 \
         -p 2379:2379 \
+	    --restart always \
         --health-cmd="curl -f http://localhost:9091/healthz" \
         --health-interval=30s \
         --health-start-period=90s \

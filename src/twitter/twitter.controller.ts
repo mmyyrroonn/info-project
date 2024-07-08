@@ -36,6 +36,11 @@ export class TwitterController {
     return this.twitterService.insertHistoryDataIntoMilvus();
   }
 
+  @Get("/queryLastestTwitter")
+  queryLastestTwitter() {
+    return this.twitterService.queryLastestTwitter();
+  }
+
   // @Post("/migration")
   // testParse(@Body() createTwitterDto: CreateTwitterDto) {
   //   return this.twitterService.migrationDB();
