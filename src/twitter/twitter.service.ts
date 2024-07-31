@@ -93,20 +93,20 @@ export class TwitterService {
 
   async queryLastestTwitter()
   {
-    const hours = 6;
+    const hours = 4;
     const hoursAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
     const twitterRecords = await this.twitterModel.aggregate([
       // 根据时间过滤最近 6 小时的记录
       { $match: { type: "Post" } },
       { $match: { createAt: { $gte: hoursAgo } } },
 
-      // 过滤掉不在筛选列表中的记录
-      { $match: { userName: { $in: filteredKOLs } } },
+      // // 过滤掉不在筛选列表中的记录
+      // { $match: { userName: { $in: filteredKOLs } } },
       { $sort: { createAt: -1 } }
       // 可以根据需要添加其他聚合阶段，如排序、限制数量等
-    ]).exec();;
+    ]).exec();
 
-    return twitterRecords;
+    return twitterRecords.filter(record => filteredKOLs.has(record.userName));
   }
 
 

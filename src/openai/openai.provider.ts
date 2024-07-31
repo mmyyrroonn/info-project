@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { batchSummaryOutputSchema, batchSummarySystemPrompt, filterOutputSchema, filterSystemPrompt, summaryOutputSchema, summarySystemPrompt } from './openai.prompt';
+import { batchSummaryOutputSchema, batchSummarySystemPrompt, filterOutputSchema, filterSystemPrompt, summaryOutputSchema, summarySystemPrompt, replySystemPrompt } from './openai.prompt';
 import { MilvusService } from 'src/milvus/milvus.service';
 
 type SUMMARY = {
@@ -28,6 +28,7 @@ export class OpenAIProvider {
   private readonly openaiEnable;
   private readonly embedAIEnable;
   private readonly summarySystemPrompt = summarySystemPrompt;
+  private readonly replySystemPrompt = replySystemPrompt;
   private readonly summaryOutputSchema = summaryOutputSchema;
   private readonly filterSystemPrompt = filterSystemPrompt;
   private readonly filterOutputSchema = filterOutputSchema;
@@ -175,6 +176,22 @@ export class OpenAIProvider {
         return; // 停止执行方法
     }
     await this.saveToSummary(tweetId, userName, res);
+  }
+
+  public async reply(content: string) {
+    console.log("Try to reply twitter content: ", content);
+    const chatCompletion: OpenAI.Chat.ChatCompletion = await this.openai.chat.completions.create({
+        messages: [this.replySystemPrompt, { role: 'user', content: content }],
+        model: 'gpt-4o',
+    });
+    let res;
+    try {
+        res = chatCompletion["choices"][0]["message"];
+    } catch (error) {
+        console.error('Invalid json format:', chatCompletion);
+        return; // 停止执行方法
+    }
+    return res;
   }
 
   public async filter(content: string) {

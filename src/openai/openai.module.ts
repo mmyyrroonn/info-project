@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TwitterSchema } from 'src/twitter/schema/twitter.schema';
 import { EmbedingSchema } from './schema/embedding.schema';
 import { MilvusModule } from 'src/milvus/milvus.module';
+import { OpenAIController } from './openai.controller';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MilvusModule } from 'src/milvus/milvus.module';
     ScheduleModule.forRoot(),
     MilvusModule
   ],
+  controllers: [OpenAIController],
   providers: [OpenAIProvider],
   exports: [OpenAIProvider],
 })
